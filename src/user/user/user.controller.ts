@@ -1,13 +1,18 @@
 import { Controller, Get, Post, Query, Req, Res, Header, HttpCode, HttpRedirectResponse, Redirect } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { request } from 'http';
+import { UserService } from './user.service';
 
 
 @Controller('/api/users')
 export class UserController {
+    constructor(private service:UserService){
+
+    }
+
     @Get('/hello')
-    sayHello(@Query('first_name') firstName:string, @Query('last_name') lastName:string):string{
-        return `Hello ${firstName} ${lastName}`;
+    async sayHello(@Query('first_name') firstName:string, @Query('last_name') lastName:string):Promise<string>{
+        return  this.service.sayHello(firstName);
     }
 
     @Post()
@@ -62,7 +67,7 @@ export class UserController {
     @Get('/view/hello')
     viewHellO(@Query('name') name:string, @Res() response:Response){
         response.render('index.html',{
-            title:'template Engine',
+            title:'Template Engine',
             name
         })
     }
