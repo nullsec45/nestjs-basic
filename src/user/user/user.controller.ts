@@ -1,14 +1,22 @@
-import { Controller, Get, Post, Query, Req, Res, Header, HttpCode, HttpRedirectResponse, Redirect } from '@nestjs/common';
+import { Controller, Get, Post, Query, Req, Res, Header, HttpCode, HttpRedirectResponse, Redirect, Inject } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { request } from 'http';
 import { UserService } from './user.service';
+import { Connection } from '../connection/connection';
+import { MailService } from '../mail/mail.service';
+import { MemberService } from '../member/member.service';
+import { UserRepository } from '../user-repository/user-repository';
 
 
 @Controller('/api/users')
 export class UserController {
-    constructor(private service:UserService){
-
-    }
+    constructor(
+        private service:UserService, 
+        private connection:Connection,
+        private mailService:MailService,
+        private memberService:MemberService,
+        @Inject('EmailService') private emailService:MailService,
+        private userRepository:UserRepository
+    ){}
 
     @Get('/hello')
     async sayHello(@Query('first_name') firstName:string, @Query('last_name') lastName:string):Promise<string>{
@@ -59,16 +67,28 @@ export class UserController {
         return request.cookies['name'];
     }
 
-    @Get('/:id')
-    getById(@Req() request :Request):string{
-        return `GET ${request.params.id};`
-    }
-
     @Get('/view/hello')
     viewHellO(@Query('name') name:string, @Res() response:Response){
         response.render('index.html',{
             title:'Template Engine',
             name
         })
+    }
+
+    @Get('/connection')
+    async getConnection():Promise<string> {
+        this.userRepository.save();
+        this.mailService.send();
+        this.emailService.send();
+
+        console.info(this.memberService.getConnectionName());
+        this.memberService.sendEmail();
+
+        return this.connection.getName();
+    }
+
+    @Get('/:id')
+    getById(@Req() request :Request):string{
+        return `GET ${request.params.id};`
     }
 }
