@@ -1,4 +1,21 @@
-import { Controller, Get, Post, Query, Req, Res, Header, HttpCode, HttpRedirectResponse, Redirect, Inject } from '@nestjs/common';
+import { 
+    Controller, 
+    Get, 
+    Post, 
+    Query, 
+    Req, 
+    Res, 
+    Header, 
+    HttpCode, 
+    HttpRedirectResponse,
+    Redirect,
+    Inject, 
+    UseFilters, 
+    HttpException, 
+    ParseIntPipe,
+    Param,
+    Body 
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { UserService } from './user.service';
 import { Connection } from '../connection/connection';
@@ -6,6 +23,10 @@ import { MailService } from '../mail/mail.service';
 import { MemberService } from '../member/member.service';
 import { UserRepository } from '../user-repository/user-repository';
 import { User } from '@prisma/client';
+import { ValidationFilter } from 'src/validation/validation.filter';
+import { ValidationPipe } from 'src/validation/validation.pipe';
+import { LoginUserRequest } from 'src/model/login.model';
+import { loginUserRequestValidation } from 'src/model/login.model';
 
 
 @Controller('/api/users')
@@ -16,12 +37,22 @@ export class UserController {
         private mailService:MailService,
         private memberService:MemberService,
         @Inject('EmailService') private emailService:MailService,
-        private userRepository:UserRepository
+        private userRepository:UserRepository,
     ){}
+    
+    @UseFilters(ValidationFilter)
+    @Post('/login')
+    login(
+        @Body(new ValidationPipe(loginUserRequestValidation))
+        request:LoginUserRequest
+    ) {
+        return `Hello ${request.username}`;
+    }  
 
     @Get('/hello')
+    @UseFilters(ValidationFilter)
     async sayHello(@Query('first_name') firstName:string, @Query('last_name') lastName:string):Promise<string>{
-        return  this.service.sayHello(firstName);
+        return  this.service.sayHello(firstName, lastName);
     }
 
     @Post()
@@ -88,14 +119,22 @@ export class UserController {
     }
 
     @Get('/create')
-    async  create(  @Query('first_name') firstName:string,
+    async  create(  
+        @Query('first_name') firstName:string,
         @Query('last_name') lastName:string
     ):Promise<User>{
+        if(!firstName){
+            throw new HttpException({
+                code:400,
+                errors:'first_name is required'
+            },400);
+        }
       return this.userRepository.save(firstName, lastName);
     }
 
     @Get('/:id')
-    getById(@Req() request :Request):string{
-        return `GET ${request.params.id};`
+    getById(@Param('id',ParseIntPipe) id:number):string{
+        console.info(id * 10);
+        return `GET ${id}`;
     }
 }
