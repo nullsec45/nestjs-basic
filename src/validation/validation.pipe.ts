@@ -8,6 +8,10 @@ export class ValidationPipe implements PipeTransform {
   }
 
   transform(value: any, metadata: ArgumentMetadata) {
-    return this.zodType.parse(value);
+    if(metadata.type == 'body'){
+      return this.zodType.parse(value);
+    }else{
+      return value;
+    }
   }
 }
