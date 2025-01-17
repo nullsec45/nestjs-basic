@@ -14,7 +14,9 @@ import {
     HttpException, 
     ParseIntPipe,
     Param,
-    Body 
+    Body, 
+    UseInterceptors,
+    UsePipes
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { UserService } from './user.service';
@@ -27,6 +29,8 @@ import { ValidationFilter } from 'src/validation/validation.filter';
 import { ValidationPipe } from 'src/validation/validation.pipe';
 import { LoginUserRequest } from 'src/model/login.model';
 import { loginUserRequestValidation } from 'src/model/login.model';
+import { TimeInterceptor } from 'src/time/time.interceptor';
+import { request } from 'http';
 
 
 @Controller('/api/users')
@@ -40,18 +44,27 @@ export class UserController {
         private userRepository:UserRepository,
     ){}
     
+    @UsePipes(new ValidationPipe(loginUserRequestValidation))
     @UseFilters(ValidationFilter)
     @Post('/login')
+    @Header('Content-Type','application/json')
+    @UseInterceptors(TimeInterceptor)
     login(
-        @Body(new ValidationPipe(loginUserRequestValidation))
-        request:LoginUserRequest
+        // @Body(new ValidationPipe(loginUserRequestValidation)) request :LoginUserRequest,
+        @Query('name') name:string,
+        @Body() request:LoginUserRequest,
     ) {
-        return `Hello ${request.username}`;
+        return {
+            data: `Hello ${request.username}`,
+        };
     }  
 
     @Get('/hello')
     @UseFilters(ValidationFilter)
-    async sayHello(@Query('first_name') firstName:string, @Query('last_name') lastName:string):Promise<string>{
+    async sayHello(
+        @Query('first_name') firstName:string, 
+        @Query('last_name') lastName:string
+    ):Promise<string>{
         return  this.service.sayHello(firstName, lastName);
     }
 
