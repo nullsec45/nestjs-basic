@@ -9,6 +9,7 @@ import { ValidationModule } from './validation/validation.module';
 import * as winston from 'winston';
 import { MiddlewareBuilder } from '@nestjs/core';
 import { LogMiddleware } from './log/log.middleware';
+import { AuthMiddleware } from './auth/auth.middleware';
 
 @Module({
   imports: [
@@ -31,6 +32,11 @@ export class AppModule {
   configure(consumer:MiddlewareConsumer){
     consumer.apply(LogMiddleware).forRoutes({
       path:'/api/*',
+      method:RequestMethod.ALL
+    });
+
+    consumer.apply(AuthMiddleware).forRoutes({
+      path:'/api/users/current',
       method:RequestMethod.ALL
     });
   }
